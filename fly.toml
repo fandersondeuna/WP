@@ -1,0 +1,23 @@
+app = "wp"  # Asegúrate de que este sea el nombre de tu aplicación
+
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  builder = "heroku/buildpacks:20"
+
+[[services]]
+  http_checks = []
+  internal_port = 8080  # Este debe coincidir con el puerto en tu código
+  processes = ["app"]
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+[env]
+  PORT = "8080"  # Establece la variable de entorno PORT
