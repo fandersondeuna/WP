@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/xml"
-	"io/ioutil" // Asegúrate de importar esta librería
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 // Estructuras para deserializar la notificación XML
@@ -44,30 +44,25 @@ type Journal struct {
 }
 
 func notificationHandler(w http.ResponseWriter, r *http.Request) {
-	// Leer el cuerpo de la solicitud
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Failed to read body", http.StatusInternalServerError)
-		return
-	}
-	defer r.Body.Close() // Asegúrate de cerrar el cuerpo después de leerlo
-
-	// Registrar el XML completo
-	log.Printf("Received XML notification: %s", body)
-
 	var paymentService PaymentService
 
 	// Decodifica el XML de la notificación
-	err = xml.Unmarshal(body, &paymentService) // Cambiar a Unmarshal
+	err := xml.NewDecoder(r.Body).Decode(&paymentService)
 	if err != nil {
 		http.Error(w, "Invalid XML", http.StatusBadRequest)
 		return
 	}
 
 	// Manejo de la notificación
-	log.Printf("Received notification for order: %s with status: %s",
+	log.Printf("[%s] Received notification for order: %s, status: %s, payment method: %s, amount: %s %s, last event: %s, journal type: %s",
+		time.Now().Format(time.RFC3339),
 		paymentService.Notify.OrderStatusEvent.OrderCode,
-		paymentService.Notify.OrderStatusEvent.Payment.LastEvent)
+		paymentService.Notify.OrderStatusEvent.Payment.LastEvent,
+		paymentService.Notify.OrderStatusEvent.Payment.PaymentMethod,
+		paymentService.Notify.OrderStatusEvent.Payment.Amount.Value,
+		paymentService.Notify.OrderStatusEvent.Payment.Amount.CurrencyCode,
+		paymentService.Notify.OrderStatusEvent.Payment.LastEvent,
+		paymentService.Notify.OrderStatusEvent.Journal.JournalType)
 
 	// Respuesta de reconocimiento
 	w.Header().Set("Content-Type", "text/plain")
