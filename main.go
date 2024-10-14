@@ -1,61 +1,34 @@
 package main
 
 import (
-    "encoding/xml"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "os"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
-type Notification struct {
-    XMLName        xml.Name `xml:"paymentService"`
-    MerchantCode   string   `xml:"merchantCode,attr"`
-    Notify         Notify   `xml:"notify"`
-}
+func notificationHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
 
-type Notify struct {
-    OrderStatusEvent OrderStatusEvent `xml:"orderStatusEvent"`
-}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
 
-type OrderStatusEvent struct {
-    OrderCode string `xml:"orderCode"`
-    Payment   Payment `xml:"payment"`
-}
+	log.Printf("Received notification: %s", body)
 
-type Payment struct {
-    PaymentMethod string  `xml:"paymentMethod"`
-    Amount        Amount  `xml:"amount"`
-    LastEvent     string  `xml:"lastEvent"`
-}
-
-type Amount struct {
-    Value         int    `xml:"value,attr"`
-    CurrencyCode  string `xml:"currencyCode,attr"`
+	// Acknowledge receipt
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("[OK]"))
 }
 
 func main() {
-    port := os.Getenv("PORT")
-    if port == "" {
-        port = "8080" // fallback
-    }
-
-    http.HandleFunc("/notifications", handleNotifications)
-
-    log.Printf("Server is running on port %s", port)
-    err := http.ListenAndServe(":"+port, nil)
-    if err != nil {
-        log.Fatalf("Could not start server: %s", err)
-    }
+	http.HandleFunc("/notifications", notificationHandler)
+	fmt.Println("Server is listening on port 8080...")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
-func handleNotifications(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPost {
-        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-        return
-    }
-
-    // Read and parse the XML body
-    body, err := ioutil.ReadAll(r.Body)
-    if
