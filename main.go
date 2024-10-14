@@ -1,7 +1,6 @@
-package main
-
 import (
 	"encoding/xml"
+	"io/ioutil" // Asegúrate de importar esta librería
 	"log"
 	"net/http"
 	"os"
@@ -43,10 +42,21 @@ type Journal struct {
 }
 
 func notificationHandler(w http.ResponseWriter, r *http.Request) {
+	// Leer el cuerpo de la solicitud
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close() // Asegúrate de cerrar el cuerpo después de leerlo
+
+	// Registrar el XML completo
+	log.Printf("Received XML notification: %s", body)
+
 	var paymentService PaymentService
 
 	// Decodifica el XML de la notificación
-	err := xml.NewDecoder(r.Body).Decode(&paymentService)
+	err = xml.Unmarshal(body, &paymentService) // Cambiar a Unmarshal
 	if err != nil {
 		http.Error(w, "Invalid XML", http.StatusBadRequest)
 		return
