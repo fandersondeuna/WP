@@ -6,47 +6,56 @@ import (
     "io/ioutil"
     "log"
     "net/http"
+    "os"
 )
 
-// Define la estructura para procesar el XML
 type Notification struct {
-    XMLName xml.Name `xml:"Notification"`
-    Status  string   `xml:"Status"`
-    // Agrega otros campos según la estructura del XML de Worldpay
+    XMLName        xml.Name `xml:"paymentService"`
+    MerchantCode   string   `xml:"merchantCode,attr"`
+    Notify         Notify   `xml:"notify"`
+}
+
+type Notify struct {
+    OrderStatusEvent OrderStatusEvent `xml:"orderStatusEvent"`
+}
+
+type OrderStatusEvent struct {
+    OrderCode string `xml:"orderCode"`
+    Payment   Payment `xml:"payment"`
+}
+
+type Payment struct {
+    PaymentMethod string  `xml:"paymentMethod"`
+    Amount        Amount  `xml:"amount"`
+    LastEvent     string  `xml:"lastEvent"`
+}
+
+type Amount struct {
+    Value         int    `xml:"value,attr"`
+    CurrencyCode  string `xml:"currencyCode,attr"`
 }
 
 func main() {
-    http.HandleFunc("/notificaciones", handleNotifications)
-    log.Println("Servidor escuchando en el puerto 8080...")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080" // fallback
+    }
+
+    http.HandleFunc("/notifications", handleNotifications)
+
+    log.Printf("Server is running on port %s", port)
+    err := http.ListenAndServe(":"+port, nil)
+    if err != nil {
+        log.Fatalf("Could not start server: %s", err)
+    }
 }
 
 func handleNotifications(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
-        http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
         return
     }
 
-    // Leer el cuerpo de la solicitud
+    // Read and parse the XML body
     body, err := ioutil.ReadAll(r.Body)
-    if err != nil {
-        http.Error(w, "Error al leer el cuerpo", http.StatusInternalServerError)
-        return
-    }
-    defer r.Body.Close()
-
-    // Procesar el XML
-    var notification Notification
-    err = xml.Unmarshal(body, &notification)
-    if err != nil {
-        http.Error(w, "Error al procesar el XML", http.StatusBadRequest)
-        return
-    }
-
-    // Aquí puedes manejar la notificación (ej. guardarla en la base de datos, etc.)
-    fmt.Printf("Notificación recibida: %v\n", notification)
-
-    // Responder a Worldpay
-    w.WriteHeader(http.StatusOK)
-    fmt.Fprintln(w, "Notificación recibida")
-}
+    if
