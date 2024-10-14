@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -44,18 +45,25 @@ type Journal struct {
 }
 
 func notificationHandler(w http.ResponseWriter, r *http.Request) {
-	var paymentService PaymentService
+	// Lee el cuerpo de la solicitud
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
 
 	// Decodifica el XML de la notificación
-	err := xml.NewDecoder(r.Body).Decode(&paymentService)
+	var paymentService PaymentService
+	err = xml.Unmarshal(body, &paymentService)
 	if err != nil {
 		http.Error(w, "Invalid XML", http.StatusBadRequest)
 		return
 	}
 
 	// Manejo de la notificación
-	log.Printf("[%s] Received notification for order: %s, status: %s, payment method: %s, amount: %s %s, last event: %s, journal type: %s",
+	log.Printf("[%s] Received notification: XML=%s, order: %s, status: %s, payment method: %s, amount: %s %s, last event: %s, journal type: %s",
 		time.Now().Format(time.RFC3339),
+		string(body), // Incluye el XML completo
 		paymentService.Notify.OrderStatusEvent.OrderCode,
 		paymentService.Notify.OrderStatusEvent.Payment.LastEvent,
 		paymentService.Notify.OrderStatusEvent.Payment.PaymentMethod,
