@@ -1,21 +1,23 @@
-# Usa una imagen de Go como base
-FROM golang:1.23.2
+# Usa la imagen de Go oficial
+FROM golang:1.20
 
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el módulo y los archivos go
+# Copia los archivos go.mod y go.sum
 COPY go.mod go.sum ./
+
+# Descarga las dependencias
 RUN go mod download
 
-# Copia el código fuente
+# Copia el resto de los archivos de tu aplicación
 COPY . .
 
-# Compila la aplicación
-RUN go build -o notifications-server
+# Compila el proyecto
+RUN go build -o notifications-server .
 
-# Expone el puerto que usará la aplicación
+# Expone el puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
+# Comando para ejecutar tu aplicación
 CMD ["./notifications-server"]
