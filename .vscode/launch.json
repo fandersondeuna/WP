@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Launch",
+        "type": "go",
+        "request": "launch",
+        "mode": "auto",
+        "program": "${workspaceFolder}/main.go", // Cambia esto si tu archivo principal se llama de otra manera o está en otra carpeta
+        "env": {},
+        "args": []
+      }
+    ]
+  }
+  
