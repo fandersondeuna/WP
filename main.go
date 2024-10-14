@@ -1,3 +1,5 @@
+package main
+
 import (
 	"encoding/xml"
 	"io/ioutil" // Asegúrate de importar esta librería
